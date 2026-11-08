@@ -127,8 +127,4 @@ The format is specific to HuffLab, not ZIP/gzip compatible.
 - `tests/`: original lab tests, codec tests and file API tests.
 - `.github/workflows/ci.yml`: Linux and Windows build/test/install/consumer check.
 
-## Before making the repository public
 
-The Huffman starter and original tests came from coursework. Verify the
-course's publication rules before publishing adapted educational materials.
-Do not choose a code license that covers files you lack the rights to license.
