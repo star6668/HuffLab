@@ -1,130 +1,113 @@
-# HuffLab — A reusable C++20 lossless compression library
+# HuffLab
 
-HuffLab is a small **C++ library and CLI** for lossless binary compression.
-It implements Huffman coding, RLE, and RLE followed by Huffman, with an
-independent package consumer to verify that another project can link to it.
+A lossless compression library written in C++20, implementing Huffman coding and Run-Length Encoding (RLE).
 
-> Current status: an **experimental library**, not a production-hardened
-> compression format. Its decoder is not intended for untrusted archives.
+I started this project from a Huffman coding assignment and expanded it into a standalone compression library with file I/O, a command-line interface, and basic performance benchmarks.
+
+I'm currently working on improving its performance and exploring low-level C++ optimization.
 
 ## Features
 
-- In-memory `hufflab::compress` / `hufflab::decompress` API.
-- File-based `hufflab::compress_file` / `hufflab::decompress_file` API.
-- Reusable CMake package: `find_package(HuffLab CONFIG REQUIRED)` and
-  `target_link_libraries(my_app PRIVATE HuffLab::hufflab)`.
-- Linux and Windows CI: original Huffman tests, archive round-trip tests,
-  file API tests and an independently compiled consumer program.
-- Existing `hufflab` CLI and original lab report preserved.
+- Huffman and RLE compression
+- Binary file compression and decompression
+- In-memory C++ API
+- Command-line interface
+- Compression benchmarks
+- CMake integration and automated tests
 
-## Build and test
+## Getting started
 
-Requires CMake >= 3.20 and a C++20 compiler.
+**Requirements:** C++20 compiler and CMake 3.20+
 
-```sh
+### Build
+
+```bash
+git clone https://github.com/star6668/HuffLab.git
+cd HuffLab
+
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
-ctest --test-dir build --build-config Release --output-on-failure
+cmake --build build -j4
 ```
 
-## CLI usage
+### Usage
 
-```sh
-./build/hufflab compress sample.txt sample.huf
-./build/hufflab decompress sample.huf restored.txt
-./build/hufflab compress sample.txt sample-rle.huf --method rle
-./build/hufflab benchmark sample.txt
-./build/hufflab analyze sample.txt
+Compress a file:
+
+```bash
+./build/hufflab compress input.txt output.huf
 ```
 
-With a multi-config generator on Windows, the executable may be
-`build\\Release\\hufflab.exe`.
+Decompress it:
 
-## Use HuffLab from *another* C++ project
-
-### 1. Install the library into a local directory
-
-```sh
-cmake --install build --config Release --prefix "$PWD/install"
+```bash
+./build/hufflab decompress output.huf restored.txt
 ```
 
-### 2. Configure and compile an independent consumer
+Run a benchmark:
 
-```sh
-cmake -S examples/consumer -B consumer-build -DCMAKE_PREFIX_PATH="$PWD/install"
-cmake --build consumer-build --config Release
-ctest --test-dir consumer-build --build-config Release --output-on-failure
+```bash
+./build/hufflab benchmark input.txt
 ```
 
-In your own `CMakeLists.txt`:
+You can also use `--method rle` or `--method combined` to choose a different compression method.
 
-```cmake
-cmake_minimum_required(VERSION 3.20)
-project(MyApp LANGUAGES CXX)
-find_package(HuffLab 0.2 CONFIG REQUIRED)
-add_executable(my_app main.cpp)
-target_link_libraries(my_app PRIVATE HuffLab::hufflab)
-```
+*On Windows, the executable path may differ depending on your CMake generator.*
 
-And in `main.cpp`:
+## Using HuffLab as a library
+
+HuffLab can also be integrated into another C++ project.
 
 ```cpp
 #include <hufflab/codec.hpp>
-#include <hufflab/file.hpp>
 
 int main() {
-    const hufflab::Bytes input{'H', 'e', 'l', 'l', 'o'};
-    const auto packed = hufflab::compress(input);
-    const auto restored = hufflab::decompress(packed);
-    if (restored != input) return 1;
+    hufflab::Bytes data{'H', 'e', 'l', 'l', 'o'};
 
-    auto stats = hufflab::compress_file("source.txt", "source.huf");
-    (void)stats;
-    hufflab::decompress_file("source.huf", "restored.txt");
+    auto compressed = hufflab::compress(data);
+    auto restored = hufflab::decompress(compressed);
+
+    return restored == data ? 0 : 1;
 }
 ```
 
-The last two calls require an existing `source.txt`; the code above
-illustrates both APIs.
+The library can be installed and imported using CMake's `find_package()`.
 
-### Public headers
+See `examples/consumer` for a complete integration example.
 
-- `<hufflab/codec.hpp>`: binary in-memory API and `Method` enum.
-- `<hufflab/file.hpp>`: file compression/decompression and `FileResult`.
+## Performance
 
-The headers `huffman.hpp` and `bitstream.hpp` remain in the source tree for
-coursework and tests, but are intentionally **not installed** as a public API.
-The library currently processes whole files in memory: there is no streaming
-interface or concurrency yet.
+HuffLab includes a benchmark command to compare Huffman, RLE, and combined compression.
 
-## Archive format: HFL1
+The benchmark reports:
 
-Each file begins with `HFL1` (4 bytes), a method identifier (1 byte), and
-original size (unsigned little-endian 64-bit, 8 bytes). Huffman methods add a
-2-byte count of unique symbols and sorted pairs `(symbol:1 byte,
-frequency:8 bytes)` before a MSB-first packed bitstream. Plain RLE uses
-`(run length:1 byte, value:1 byte)` pairs after the common header.
-The format is specific to HuffLab, not ZIP/gzip compatible.
+- Compressed file size
+- Compression ratio
+- Compression and decompression time
+- Round-trip verification
 
-## Reliability and limitations
+These measurements are currently intended for comparison and experimentation rather than formal performance claims.
 
-- Archive headers can overwhelm savings on small inputs; some files grow.
-- `benchmark` times a single run; figures are for exploration, not rigorous
-  reproducible performance claims.
-- File helpers load all bytes into memory and overwrite the destination on
-  successful output. They are not atomic or crash-safe operations.
-- Structure and length validation exist, but the format has no checksum or
-  authentication. **Do not decompress untrusted files or use this for critical backups.**
-- The format is not yet stable; future versions may change it.
+## Project structure
 
-## Source layout
+```text
+include/hufflab/   Public headers
+src/               Compression engine and CLI
+tests/             Unit and integration tests
+examples/          Library usage examples
+```
 
-- `include/hufflab/codec.hpp`, `include/hufflab/file.hpp`: installed public API.
-- `src/codec.cpp`, `src/bitstream.cpp`, `src/file.cpp`: codec and I/O layer.
-- `src/huffman.cpp`, `include/hufflab/huffman.hpp`: original lab algorithms.
-- `src/main.cpp`: CLI; `examples/lab_report.cpp`: original lab report.
-- `examples/consumer`: standalone consumer using `find_package`.
-- `tests/`: original lab tests, codec tests and file API tests.
-- `.github/workflows/ci.yml`: Linux and Windows build/test/install/consumer check.
+## Current limitations
 
+HuffLab is still experimental. Files are currently processed in memory, the archive format is not yet stable, and there is no checksum or authentication. It should not be used to decompress untrusted archives.
 
+## Next steps
+
+- [ ] Profile and optimize Huffman encoding/decoding
+- [ ] Add streaming compression
+- [ ] Reduce memory allocations
+- [ ] Explore multithreaded compression
+- [ ] Improve archive validation and robustness
+
+## License
+
+License information will be added once the distribution terms are finalized.
