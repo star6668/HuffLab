@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_huffman.dir/tests/test_huffman.cpp.o -o test_huffman  libhufflab_core.a 

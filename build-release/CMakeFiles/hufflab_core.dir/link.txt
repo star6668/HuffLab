@@ -1,0 +1,2 @@
+/usr/bin/ar qc libhufflab_core.a CMakeFiles/hufflab_core.dir/src/huffman.cpp.o CMakeFiles/hufflab_core.dir/src/bitstream.cpp.o CMakeFiles/hufflab_core.dir/src/codec.cpp.o CMakeFiles/hufflab_core.dir/src/file.cpp.o
+/usr/bin/ranlib libhufflab_core.a

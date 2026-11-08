@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/hufflab_lab_report.dir/examples/lab_report.cpp.o -o hufflab_lab_report  libhufflab_core.a 

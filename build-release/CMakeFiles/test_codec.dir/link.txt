@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_codec.dir/tests/test_codec.cpp.o -o test_codec  libhufflab_core.a 
